@@ -1,0 +1,138 @@
+swagger: "2.0"
+info:
+  description: "PROJECT DESCRIPTION"
+  version: "1.0.0"
+  title: "PROJECT TITLE"
+  contact:
+    email: "joaobrunoah@gmail.com"
+host: "127.0.0.1:3000"
+basePath: "/v1"
+schemes:
+  - "http"
+paths:
+  /login:
+    post:
+      tags:
+        - "Auth"
+      summary: "SUMMARY OF REQUEST"
+      description: "DESCRIPTION OF REQUEST"
+      operationId: "logIn"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "User e-mail and password."
+          required: true
+          schema:
+            $ref: "#/definitions/LogIn"
+      responses:
+        200:
+          description: "Successful login"
+        400:
+          description: "Empty e-mail or password"
+        401:
+          description: "Incorrect e-mail or password"
+        500:
+          description: "Unknown error"
+        503:
+          description: "Lost connection with database"
+  /signup:
+    post:
+      tags:
+        - "Auth"
+      summary: "Register a new user"
+      description: "This endpoint registers a new user."
+      operationId: "signUp"
+      consumes:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "User e-mail and password. Password must have between 8 and 20 characters long and have at least 1 upper case char, 1 lower case char and 1 number."
+          required: true
+          schema:
+            $ref: "#/definitions/SignUp"
+      responses:
+        204:
+          description: "Successful registration"
+        400:
+          description: "Wrong e-mail or password"
+        409:
+          description: "E-mail already registered"
+        500:
+          description: "Unknown error"
+        503:
+          description: "Lost connection with database"
+  /users/{id_user}/change-password:
+    post:
+      tags:
+        - "User"
+      summary: "Changes an user password"
+      description: "This endpoints changes an user password, if Authorization token is from own user"
+      operationId: "ChangeUserPassword"
+      security:
+        - ApiKey: []
+      consumes:
+        - "application/json"
+      parameters:
+        - in: "path"
+          name: "id_user"
+          type: "integer"
+          description: "Id of user changing password"
+          required: true
+        - in: "header"
+          name: "Authorization"
+          type: "string"
+          description: "Authorization token, obtained on login. MUST BE OWN USER."
+          required: false
+        - in: "body"
+          name: "body"
+          description: "Old and new passwords"
+          required: true
+          schema:
+            $ref: "#/definitions/ChangePassword"
+      responses:
+        204:
+          description: "Successful"
+        400:
+          description: "id_user is not a number, new password is not valid"
+        401:
+          description: "Invalid/Empty/Expired token"
+        403:
+          description: "Access is Forbidden"
+        404:
+          description: "User not found"
+        500:
+          description: "Unknown error"
+        503:
+          description: "Lost connection with database"
+securityDefinitions:
+  ApiKey:
+    type: "apiKey"
+    in: "header"
+    name: "Authorization"
+definitions:
+  LogIn:
+    type: "object"
+    properties:
+      user_email:
+        type: "string"
+      user_password:
+        type: "string"
+  SignUp:
+    type: "object"
+    properties:
+      user_email:
+        type: "string"
+      user_password:
+        type: "string"
+  ChangePassword:
+    type: "object"
+    properties:
+      old_password:
+        type: "string"
+      new_password:
+        type: "string"
