@@ -3,9 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "deploy-mock": "node routes/v1/documentation/deploy-mock.js",
+    "test": "jest --forceExit --detectOpenHandles --maxWorkers=10",
     "dev": "yarn install && nodemon ./bin/www",
     "pretest": "yarn install",
-    "test": "jest",
     "prestart": "yarn install",
     "start": "node ./bin/www"
   },

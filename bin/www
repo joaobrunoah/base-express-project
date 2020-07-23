@@ -89,13 +89,6 @@ function onError(error) {
  */
 
 async function onListening() {
-
-  /**
-   * Configure Database
-   */
-  await InitializeDb.initializeDatabase();
-  await InitializeDb.initializeObjection();
-
   var addr = server.address();
   var bind = typeof addr === 'string'
     ? 'pipe ' + addr

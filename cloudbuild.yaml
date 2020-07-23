@@ -1,0 +1,66 @@
+# cloudbuild.yaml
+steps:
+  - id: yarn-install
+    name: node
+    entrypoint: yarn
+    args: ['install']
+  # Install CLoud SQL proxy
+  - id: proxy-install
+    name: alpine:3
+    entrypoint: sh
+    args:
+      - '-c'
+      - 'wget -O /workspace/cloud_sql_proxy https://storage.googleapis.com/cloudsql-proxy/v1.16/cloud_sql_proxy.linux.386 && chmod +x /workspace/cloud_sql_proxy'
+    waitFor: ['-']
+  - id: yarn-test
+    name: node
+    entrypoint: sh
+    args: ['-c', '(/workspace/cloud_sql_proxy -dir=/workspace -instances=${_CLOUD_SQL_INSTANCE} & sleep 2) && yarn test']
+    env:
+      [
+        'DB_USER=${_DB_USER}',
+        'DB_PASS=${_DB_PASS}',
+        'DB_SCHEMA=${_DB_SCHEMA}',
+        'DB_SOCKET=${_DB_SOCKET_TEST}',
+        'PIXAERA_AUTH_ADDRESS=${_PIXAERA_AUTH_ADDRESS}',
+        'PIXAERA_AUTH_CLIENT_ID=${_PIXAERA_AUTH_CLIENT_ID}',
+        'PIXAERA_AUTH_CLIENT_SECRET=${_PIXAERA_AUTH_CLIENT_SECRET}',
+        'PIXAERA_AUTH_CRYPT_SECRET=${_PIXAERA_AUTH_CRYPT_SECRET}',
+        'PIXAERA_AUTH_REDIRECT_URI=${_PIXAERA_AUTH_REDIRECT_URI}',
+        'PIXAERA_AUTH_AFTER_LOGIN_PAGE=${_PIXAERA_AUTH_AFTER_LOGIN_PAGE}',
+        'PIXAERA_AUTH_SCOPE=${_PIXAERA_AUTH_SCOPE}',
+        'PIXAERA_AUTH_SANDBOX=${_PIXAERA_AUTH_SANDBOX}',
+        'PIXAERA_AUTH_CALLBACK_NO_REDIRECT=true',
+        'PERMISSIONS_API=${_PERMISSIONS_API_TEST}',
+        'PIXAERA_SERVICES_TOKEN=${_PIXAERA_SERVICES_TOKEN_TEST}'
+      ]
+    waitFor: ['yarn-install', 'proxy-install']
+  # Build New Image
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["build", "-t", "gcr.io/${PROJECT_ID}/${REPO_NAME}${_REPO_SUFFIX}", "."]
+  # Push Image to Google Container Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "gcr.io/${PROJECT_ID}/${REPO_NAME}${_REPO_SUFFIX}"]
+  # Extra step to Deploy New Revision to Cloud Run
+  - name: "gcr.io/cloud-builders/gcloud"
+    args: ['beta', 'run', 'deploy', '${REPO_NAME}${_REPO_SUFFIX}',
+           '--image', 'gcr.io/${PROJECT_ID}/${REPO_NAME}${_REPO_SUFFIX}:latest',
+           '--region', 'us-central1',
+           '--allow-unauthenticated',
+           '--platform', 'managed',
+           '--set-env-vars', 'DB_USER=${_DB_USER},
+                              DB_PASS=${_DB_PASS},
+                              DB_SCHEMA=${_DB_SCHEMA},
+                              DB_SOCKET=${_DB_SOCKET},
+                              PIXAERA_AUTH_CLIENT_ID=${_PIXAERA_AUTH_CLIENT_ID},
+                              PIXAERA_AUTH_CLIENT_SECRET=${_PIXAERA_AUTH_CLIENT_SECRET},
+                              PIXAERA_AUTH_CRYPT_SECRET=${_PIXAERA_AUTH_CRYPT_SECRET},
+                              PIXAERA_AUTH_REDIRECT_URI=${_PIXAERA_AUTH_REDIRECT_URI},
+                              PIXAERA_AUTH_AFTER_LOGIN_PAGE=${_PIXAERA_AUTH_AFTER_LOGIN_PAGE},
+                              PIXAERA_AUTH_SCOPE=${_PIXAERA_AUTH_SCOPE},
+                              PIXAERA_AUTH_SANDBOX=${_PIXAERA_AUTH_SANDBOX},
+                              PIXAERA_AUTH_CALLBACK_NO_REDIRECT=true,
+                              PERMISSIONS_API=${_PERMISSIONS_API},
+                              PIXAERA_SERVICES_TOKEN=${_PIXAERA_SERVICES_TOKEN}'
+    ]
+timeout: 3600s
