@@ -3,8 +3,8 @@ const axios = require('axios');
 
 const apiDocText = fs.readFileSync(`${__dirname}/swagger.yaml`).toString('utf-8');
 
-const MOCK_ADDR = 'https://pixaera-auth-provider.mocklab.io';
-const MOCK_TOKEN = '9031c0a48e58871a65e72fb4115a2c72';
+const MOCK_ADDR = '';
+const MOCK_TOKEN = '';
 
 try {
   // Remove old stubs
